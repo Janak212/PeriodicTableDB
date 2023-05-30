@@ -2,28 +2,60 @@
 
 # echo -e "\n\n~~~~ Periodic Table ~~~~\n\n"
 
-PSQL="psql --username=freecodecamp --dbname=periodic_table -t --tuples-only -c"
-
-echo -e "\n\n~~~~ Periodic Table ~~~~\n\n"
+PSQL="psql -X --username=freecodecamp --dbname=periodic_table --tuples-only -c"
+SYMBOL=$1
 
 if [[ -z $1 ]]
 then
   echo "Please provide an element as an argument."
-  echo -e "\nPlease provide an element as an argument."
-  exit
+else
+
+  # if input is not a number
+  if [[ ! $SYMBOL =~ ^[0-9]+$ ]]
+  then
+    # if input is greater than two letter
+    LENGTH=$(echo -n "$SYMBOL" | wc -m)
+    if [[ $LENGTH -gt 2 ]]
+    then
+      # get data by full name
+      DATA=$($PSQL "SELECT * FROM elements INNER JOIN properties USING(atomic_number) INNER JOIN types USING (type_id) WHERE name='$SYMBOL'")
+      if [[ -z $DATA ]]
+      then
+        echo "I could not find that element in the database."
+      else
+        echo "$DATA" | while read BAR BAR NUMBER BAR SYMBOL BAR NAME BAR WEIGHT BAR MELTING BAR BOILING BAR TYPE
+        do
+          echo "The element with atomic number $NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $WEIGHT amu. $NAME has a melting point of $MELTING celsius and a boiling point of $BOILING celsius."
+        done
+      fi
+    else
+      # get data by atomic symbol
+      DATA=$($PSQL "SELECT * FROM elements INNER JOIN properties USING(atomic_number) INNER JOIN types USING (type_id) WHERE symbol='$SYMBOL'")
+      if [[ -z $DATA ]]
+      then
+        echo "I could not find that element in the database."
+      else
+        echo "$DATA" | while read BAR BAR NUMBER BAR SYMBOL BAR NAME BAR WEIGHT BAR MELTING BAR BOILING BAR TYPE
+        do
+          echo "The element with atomic number $NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $WEIGHT amu. $NAME has a melting point of $MELTING celsius and a boiling point of $BOILING celsius."
+        done
+      fi
+    fi
+
+  else
+    # get data by atomic number
+    DATA=$($PSQL "SELECT * FROM elements INNER JOIN properties USING(atomic_number) INNER JOIN types USING (type_id) WHERE atomic_number=$SYMBOL")
+    if [[ -z $DATA ]]
+    then
+      echo "I could not find that element in the database."
+    else
+      echo "$DATA" | while read BAR BAR NUMBER BAR SYMBOL BAR NAME BAR WEIGHT BAR MELTING BAR BOILING BAR TYPE
+      do
+        echo "The element with atomic number $NUMBER is $NAME ($SYMBOL). It's a $TYPE, with a mass of $WEIGHT amu. $NAME has a melting point of $MELTING celsius and a boiling point of $BOILING celsius."
+      done
+    fi
+  fi
+
 fi
 
-@@ -22,12 +22,12 @@ fi
-#element not in db
-if [[ -z $element ]]
-then
-  echo "I could not find that element in the database."
-  echo -e "\nI could not find that element in the database."
-  exit
-fi
 
-echo $element | while IFS=" |" read an name symbol type mass mp bp 
-do
-  echo "The element with atomic number $an is $name ($symbol). It's a $type, with a mass of $mass amu. $name has a melting point of $mp celsius and a boiling point of $bp celsius."
-  echo -e "\nThe element with atomic number $an is $name ($symbol). It's a $type, with a mass of $mass amu. $name has a melting point of $mp celsius and a boiling point of $bp celsius."
-done
